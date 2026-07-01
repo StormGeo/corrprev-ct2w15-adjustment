@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "corrprev-ct2w15-adjustment"
+version = "0.1.0"
+description = "Operational CT2W15 weather forecast adjustment utilities"
+requires-python = ">=3.10"
+dependencies = [
+    "h5netcdf",
+    "h5py",
+    "netCDF4",
+    "numpy",
+    "pandas",
+    "PyYAML",
+    "xarray",
+]
+
+[project.scripts]
+corrprev-adjust = "weather_correction.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

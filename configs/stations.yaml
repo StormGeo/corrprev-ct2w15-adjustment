@@ -1,0 +1,61 @@
+
+stations:
+  brasilia:
+    city: Brasília
+    lat: -15.789
+    lon: -47.926
+    id: 8173
+
+  curitiba:
+    city: Curitiba
+    lat: -25.449
+    lon: -49.231
+    id: 6731
+
+  florianopolis:
+    city: Florianópolis
+    lat: -27.603
+    lon: -48.620
+    id: 4915
+
+  porto_alegre:
+    city: Porto Alegre
+    lat: -30.054
+    lon: -51.175
+    id: 5346
+
+  rio_de_janeiro:
+    city: Rio de Janeiro
+    lat: -22.861
+    lon: -43.411
+    id: 5959
+
+  sao_paulo:
+    city: São Paulo
+    lat: -23.496
+    lon: -46.620
+    id: 3477
+
+  belo_horizonte:
+    city: Belo Horizonte
+    lat: -19.980
+    lon: -43.958
+    id: 6879
+
+  recife:
+    city: Recife
+    lat: -8.054
+    lon: -34.900
+    id: 7140
+
+  salvador:
+    city: Salvador
+    lat: -13.006
+    lon: -38.506
+    id: 7564
+
+  vitoria:
+    city: Vitória
+    lat: -20.271
+    lon: -40.306
+    id: 8284
