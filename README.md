@@ -1,27 +1,25 @@
 # CorrPrev CT2W15 Adjustment
 
-Operational utilities to adjust CT2W15 forecast fields using meteorologist-provided daily JSON data.
+Generate corrected operational CSV files from explicit NetCDF and meteorologist JSON inputs.
 
-The pipeline currently corrects:
+Each execution processes one variable and writes one CSV with this schema:
 
-- hourly 2 m air temperature;
-- hourly precipitation distribution;
-- weather icon values derived from the meteorologist JSON;
-- optional point updates in existing meteorologist NetCDF files.
+```csv
+date,data,city,lat,lon
+```
 
-## Repository Layout
+- `date`: local forecast timestamp;
+- `data`: corrected value;
+- `city`: station/city id from `configs/stations.yaml`;
+- `lat`, `lon`: station coordinates from `configs/stations.yaml`.
+
+The output path is generated as:
 
 ```text
-configs/
-  paths.yaml        # Local paths and processing parameters
-  stations.yaml     # Station latitude/longitude definitions
-src/weather_correction/
-  core.py           # Correction and NetCDF I/O logic
-  cli.py            # Command-line interface
-run_correction.py   # Thin local runner
-requirements.txt
-pyproject.toml
+{output_dir}/{variable}/{year}/{julian}/meteorologist_{variable}_M000_{YYYYMMDDHH}.csv
 ```
+
+`YYYYMMDDHH`, `year`, and `julian` are based on the local execution time.
 
 ## Installation
 
@@ -31,62 +29,61 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-For editable package usage:
+## Examples
+
+Temperature:
 
 ```bash
-pip install -e .
+python run_correction.py \
+  --input-nc /path/to/temperature.nc \
+  --nc-variable 2m_air_temperature \
+  --met-json /path/to/weather-export.json \
+  --forecast-start "2026-06-16 00:00" \
+  --output-dir /path/to/outputs
 ```
 
-## Configuration
-
-Edit `configs/paths.yaml` for your local data layout. The file currently keeps local paths for operational testing.
-
-Important sections:
-
-- `paths`: input and output directories;
-- `files`: file-name templates for model and meteorologist NetCDFs;
-- `model_inputs`: variable names read from model NetCDFs;
-- `netcdf_update`: file-name tokens and internal variable names for target NetCDF updates;
-- `processing`: forecast window and JSON/date alignment parameters.
-
-`*_file_variable` is the token used in the NetCDF path and file name. `*_variable` is the variable inside the NetCDF file. They can differ, for example:
-
-```yaml
-netcdf_update:
-  icon_file_variable: weather_icon
-  icon_variable: weather_icon_smoothed
-```
-
-## Usage
-
-Generate corrected CSV files:
+Total precipitation:
 
 ```bash
-python run_correction.py --date-rod 20260615 --run-hour 00 --output-mode csv
+python run_correction.py \
+  --input-nc /path/to/total_precipitation.nc \
+  --nc-variable total_precipitation \
+  --met-json /path/to/weather-export.json \
+  --forecast-start "2026-06-16 00:00" \
+  --output-dir /path/to/outputs
 ```
 
-Update NetCDF files only:
+If `--cape-nc` is omitted, the script tries to infer it by replacing
+`total_precipitation` with `cape_index` in `--input-nc`.
+
+Weather icon:
 
 ```bash
-python run_correction.py --date-rod 20260615 --run-hour 00 --output-mode netcdf
+python run_correction.py \
+  --nc-variable weather_icon \
+  --met-json /path/to/weather-export.json \
+  --forecast-start "2026-06-16 00:00" \
+  --output-dir /path/to/outputs
 ```
 
-Generate CSV files and update NetCDF files:
+`weather_icon` uses the JSON daily period icons and distributes them hourly by dawn,
+morning, afternoon, and night. It does not require `--input-nc`.
+
+## Defaults
+
+If `--forecast-start` is omitted, the script uses today's 00:00 in the configured
+timezone. `--forecast-hours` defaults to `processing.forecast_hours`, currently 72.
+
+The end time is inclusive, so 72 hours produces 73 hourly timestamps.
+
+## Missing Cities
+
+Default behavior is:
 
 ```bash
-python run_correction.py --date-rod 20260615 --run-hour 00 --output-mode both --save-validation true
+--missing-city-policy skip
 ```
 
-The JSON file is selected automatically from `paths.json_dir` using `files.json_template`. The current default layout is `weather/exports/{year}/{julian}/*.json`, and the file name must contain the target date `date_rod + processing.start_day_offset`. A flat `paths.json_dir/*.json` folder is still supported as a fallback.
-
-## Notes
-
-The correction window is controlled by:
-
-```yaml
-processing:
-  start_day_offset: 1
-  forecast_hours: 72
-```
-
-The end time is inclusive, so `forecast_hours: 72` produces 73 hourly timestamps.
+Stations missing from the JSON are skipped. If the JSON also contains cities
+that are not configured in `configs/stations.yaml`, they are ignored and a warning
+is printed asking you to contact support.

@@ -2,29 +2,7 @@ run:
   timezone: "America/Sao_Paulo"
 
 paths:
-  chimera_as_base: ../chimera_as
-  meteorologist_base: ../meteorologist
-  json_dir: ../jsons
   output_dir: ../corrprev-ct2w15-adjustment/outputs
-
-files:
-  nc_template: "{base}/{variable}/{year}/{julian}/chimera_as_{variable}_M000_{date_rod}{rod}.nc"
-  meteorologist_nc_template: "{base}/{variable}/{year}/{julian}/meteorologist_{variable}_M000_{date_rod}{rod}.nc"
-  json_template: "{base}/weather/exports/{year}/{julian}/*.json"
-
-model_inputs:
-  temperature_variable: 2m_air_temperature
-  precipitation_variable: total_precipitation
-  cape_variable: cape_index
-  icon_variable: weather_icon_smoothed
-
-netcdf_update:
-  temperature_file_variable: 2m_air_temperature
-  temperature_variable: 2m_air_temperature
-  precipitation_file_variable: total_precipitation
-  precipitation_variable: total_precipitation
-  icon_file_variable: weather_icon
-  icon_variable: weather_icon
 
 temperature:
   round_model_before_correction: true
@@ -37,7 +15,4 @@ rain:
   output_round_decimals: 1
 
 processing:
-  start_day_offset: 1
   forecast_hours: 72
-  infer_date_shift_days: true
-  date_shift_days: 0
