@@ -659,6 +659,12 @@ def build_output_path(
     variable: str,
     run_timestamp: pd.Timestamp,
 ) -> Path:
+    
+    if run_timestamp.tzinfo is None:
+        run_timestamp = run_timestamp.tz_localize("UTC")
+    else:
+        run_timestamp = run_timestamp.tz_convert("UTC")
+        
     year = run_timestamp.strftime("%Y")
     julian = run_timestamp.strftime("%j")
     run_id = run_timestamp.strftime("%Y%m%d%H")
