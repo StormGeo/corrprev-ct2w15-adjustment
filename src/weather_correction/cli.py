@@ -12,6 +12,17 @@ from weather_correction.core import (
 )
 
 
+def resolve_output_path(
+    output_path_or_dir: str | Path,
+    variable: str,
+    run_timestamp,
+) -> Path:
+    output_path_or_dir = Path(output_path_or_dir)
+    if output_path_or_dir.suffix.lower() == ".csv":
+        return output_path_or_dir
+    return build_output_path(output_path_or_dir, variable, run_timestamp)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate an operational corrected CSV for one forecast variable."
@@ -57,7 +68,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         default=None,
-        help="Base output directory. Defaults to paths.output_dir from YAML.",
+        help=(
+            "Base output directory or full CSV path. Defaults to paths.output_dir "
+            "from YAML."
+        ),
     )
     parser.add_argument(
         "--missing-city-policy",
@@ -113,7 +127,7 @@ def main() -> None:
     )
 
     run_timestamp = execution_timestamp(timezone)
-    output_path = build_output_path(output_dir, args.nc_variable, run_timestamp)
+    output_path = resolve_output_path(output_dir, args.nc_variable, run_timestamp)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output.to_csv(output_path, index=False)
 
