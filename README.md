@@ -8,7 +8,7 @@ Each execution processes one variable and writes one CSV with this schema:
 date,data,city,lat,lon
 ```
 
-- `date`: local forecast timestamp;
+- `date`: forecast timestamp in `output.timestamp_timezone`;
 - `data`: corrected value;
 - `city`: station/city id from `configs/stations.yaml`;
 - `lat`, `lon`: station coordinates from `configs/stations.yaml`.
@@ -19,7 +19,7 @@ The output path is generated as:
 {output_dir}/{variable}/{year}/{julian}/meteorologist_{variable}_M000_{YYYYMMDDHH}.csv
 ```
 
-`YYYYMMDDHH`, `year`, and `julian` are based on the local execution time.
+`YYYYMMDDHH`, `year`, and `julian` are based on the UTC execution time.
 
 ## Installation
 
@@ -75,6 +75,14 @@ If `--forecast-start` is omitted, the script uses today's 00:00 in the configure
 timezone. `--forecast-hours` defaults to `processing.forecast_hours`, currently 72.
 
 The end time is inclusive, so 72 hours produces 73 hourly timestamps.
+
+For NetCDF-backed variables, `processing.netcdf_extra_hours` is added only to the
+internal NetCDF extraction window. This keeps the requested forecast horizon
+unchanged while allowing the UTC model data to cover the final local hours after
+conversion to `run.timezone`.
+
+Output CSV timestamps use `output.timestamp_timezone`. The default config writes
+`date` in UTC; use `local` or `America/Sao_Paulo` to write local timestamps.
 
 ## Missing Cities
 

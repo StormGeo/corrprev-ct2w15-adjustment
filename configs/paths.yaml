@@ -4,6 +4,9 @@ run:
 paths:
   output_dir: ../corrprev-ct2w15-adjustment/outputs
 
+output:
+  timestamp_timezone: "UTC"
+
 temperature:
   round_model_before_correction: true
   model_round_decimals: 1
@@ -16,3 +19,4 @@ rain:
 
 processing:
   forecast_hours: 72
+  netcdf_extra_hours: 3

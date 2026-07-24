@@ -677,14 +677,48 @@ def build_output_path(
     )
 
 
-def build_operational_output(df: pd.DataFrame) -> pd.DataFrame:
+def output_timestamp_column(output_timezone: str) -> str:
+    output_timezone = str(output_timezone)
+    if output_timezone.upper() == "UTC":
+        return "time_utc"
+    if output_timezone.lower() == "local" or output_timezone == "America/Sao_Paulo":
+        return "time_local"
+    raise CorrectionError(
+        "Use output.timestamp_timezone as 'UTC', 'local', or 'America/Sao_Paulo'."
+    )
+
+
+def filter_to_forecast_horizon(
+    df: pd.DataFrame,
+    forecast_start: pd.Timestamp,
+    forecast_hours: int,
+    output_timezone: str,
+) -> pd.DataFrame:
+    if df.empty:
+        return df.copy()
+
+    time_col = output_timestamp_column(output_timezone)
+    start = forecast_start
+    if time_col == "time_utc":
+        start = forecast_start.tz_convert("UTC")
+    end = start + pd.Timedelta(hours=int(forecast_hours))
+
+    mask = df[time_col].between(start, end)
+    return df.loc[mask].copy()
+
+
+def build_operational_output(
+    df: pd.DataFrame,
+    output_timezone: str = "local",
+) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["date", "data", "city", "lat", "lon"])
 
-    out = df[["time_local", "corrected_value", "city_id", "lat", "lon", "station_order"]].copy()
-    out["date"] = pd.to_datetime(out["time_local"]).dt.strftime("%d/%m/%Y %H:%M")
+    time_col = output_timestamp_column(output_timezone)
+    out = df[[time_col, "corrected_value", "city_id", "lat", "lon", "station_order"]].copy()
+    out["date"] = pd.to_datetime(out[time_col]).dt.strftime("%d/%m/%Y %H:%M")
     out = out.rename(columns={"corrected_value": "data", "city_id": "city"})
-    out = out.sort_values(["station_order", "date"])
+    out = out.sort_values(["station_order", time_col])
     return out[["date", "data", "city", "lat", "lon"]]
 
 
@@ -714,6 +748,9 @@ def run_single_variable_correction(
             + ". Please contact support."
         )
     timezone = cfg["run"].get("timezone", "America/Sao_Paulo")
+    output_timezone = cfg.get("output", {}).get("timestamp_timezone", "local")
+    netcdf_extra_hours = int(cfg.get("processing", {}).get("netcdf_extra_hours", 0))
+    netcdf_forecast_hours = forecast_hours + netcdf_extra_hours
 
     if nc_variable == "weather_icon":
         base_hourly = build_hourly_template_from_stations(
@@ -731,7 +768,7 @@ def run_single_variable_correction(
             nc_variable=nc_variable,
             stations_cfg=stations_cfg,
             forecast_start=forecast_start,
-            forecast_hours=forecast_hours,
+            forecast_hours=netcdf_forecast_hours,
             timezone=timezone,
             output_col="model_value",
         )
@@ -745,7 +782,7 @@ def run_single_variable_correction(
                 nc_variable="cape_index",
                 stations_cfg=stations_cfg,
                 forecast_start=forecast_start,
-                forecast_hours=forecast_hours,
+                forecast_hours=netcdf_forecast_hours,
                 timezone=timezone,
                 output_col="model_value",
             )
@@ -759,4 +796,10 @@ def run_single_variable_correction(
         else:
             raise AssertionError("unreachable")
 
-    return build_operational_output(corrected)
+    corrected = filter_to_forecast_horizon(
+        df=corrected,
+        forecast_start=forecast_start,
+        forecast_hours=forecast_hours,
+        output_timezone=output_timezone,
+    )
+    return build_operational_output(corrected, output_timezone=output_timezone)
